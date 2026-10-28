@@ -93,12 +93,12 @@ export async function validateBatchAction(
   // Load existing certificates for this event
   const { data: existingCerts } = await supabase
     .from('certificates')
-    .select('email, id')
+    .select('reg_no, id')
     .eq('event_id', batch.event_id);
 
   const existingMap = new Map<string, string>();
   (existingCerts || []).forEach((c) => {
-    existingMap.set(c.email, c.id);
+    if (c.reg_no) existingMap.set(c.reg_no, c.id);
   });
 
   const report = validateImportBatch(batch.raw_rows as Record<string, string>[], mapping, existingMap);
@@ -127,7 +127,7 @@ export async function commitImportBatchAction(
   issuedCount: number;
   updatedCount: number;
   skippedCount: number;
-  records: Array<{ email: string; name: string; certificateId: string; verifyUrl: string }>;
+  records: Array<{ regNo: string; email: string; name: string; certificateId: string; verifyUrl: string }>;
 }>> {
   const admin = await requireAdmin();
   const supabase = createAdminClient();
@@ -156,12 +156,12 @@ export async function commitImportBatchAction(
   // Fetch existing certs
   const { data: existingCerts } = await supabase
     .from('certificates')
-    .select('id, email, name, render_version')
+    .select('id, reg_no, name, render_version')
     .eq('event_id', batch.event_id);
 
   const existingMap = new Map<string, { id: string; name: string; render_version: number }>();
   (existingCerts || []).forEach((c) => {
-    existingMap.set(c.email, c);
+    if (c.reg_no) existingMap.set(c.reg_no, c);
   });
 
   const rawRows = batch.raw_rows as Record<string, string>[];
@@ -170,7 +170,8 @@ export async function commitImportBatchAction(
   const recordsToInsert: Array<{
     id: string;
     event_id: string;
-    email: string;
+    reg_no: string;
+    email: string | null;
     name: string;
     status: 'valid';
     render_version: number;
@@ -183,7 +184,7 @@ export async function commitImportBatchAction(
     render_version: number;
   }> = [];
 
-  const exportRecords: Array<{ email: string; name: string; certificateId: string; verifyUrl: string }> = [];
+  const exportRecords: Array<{ regNo: string; email: string; name: string; certificateId: string; verifyUrl: string }> = [];
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://certificate.awslpu.in';
 
   let issuedCount = 0;
@@ -203,7 +204,7 @@ export async function commitImportBatchAction(
     }
 
     const finalName = mod?.name ? mod.name.trim() : row.normalizedName;
-    const existing = existingMap.get(row.normalizedEmail);
+    const existing = existingMap.get(row.normalizedRegNo);
 
     if (existing) {
       if (updateExistingNames && existing.name !== finalName) {
@@ -214,7 +215,8 @@ export async function commitImportBatchAction(
         });
         updatedCount++;
         exportRecords.push({
-          email: row.normalizedEmail,
+          regNo: row.normalizedRegNo,
+          email: row.normalizedEmail || '',
           name: finalName,
           certificateId: existing.id,
           verifyUrl: `${siteUrl}/verify/${existing.id}`,
@@ -222,7 +224,8 @@ export async function commitImportBatchAction(
       } else {
         skippedCount++;
         exportRecords.push({
-          email: row.normalizedEmail,
+          regNo: row.normalizedRegNo,
+          email: row.normalizedEmail || '',
           name: existing.name,
           certificateId: existing.id,
           verifyUrl: `${siteUrl}/verify/${existing.id}`,
@@ -230,11 +233,12 @@ export async function commitImportBatchAction(
       }
     } else {
       // New certificate to issue with collision retry
-      let certId = createCertificateId();
+      const certId = createCertificateId();
       recordsToInsert.push({
         id: certId,
         event_id: batch.event_id,
-        email: row.normalizedEmail,
+        reg_no: row.normalizedRegNo,
+        email: row.normalizedEmail || null,
         name: finalName,
         status: 'valid',
         render_version: 1,
@@ -242,7 +246,8 @@ export async function commitImportBatchAction(
       });
       issuedCount++;
       exportRecords.push({
-        email: row.normalizedEmail,
+        regNo: row.normalizedRegNo,
+        email: row.normalizedEmail || '',
         name: finalName,
         certificateId: certId,
         verifyUrl: `${siteUrl}/verify/${certId}`,
@@ -257,7 +262,7 @@ export async function commitImportBatchAction(
       const chunk = recordsToInsert.slice(i, i + CHUNK_SIZE);
       const { error: insertErr } = await supabase
         .from('certificates')
-        .upsert(chunk, { onConflict: 'event_id,email', ignoreDuplicates: true });
+        .upsert(chunk, { onConflict: 'event_id,reg_no', ignoreDuplicates: true });
 
       if (insertErr) {
         return failure('INTERNAL_ERROR', `Failed to insert certificates: ${insertErr.message}`);

@@ -28,6 +28,35 @@ export function validateEmail(email: string): string | null {
 }
 
 /**
+ * Normalize a registration number.
+ * Trim and uppercase (canonical format, e.g. "12409260").
+ */
+export function normalizeRegNo(input: string): string {
+  return input.trim().toUpperCase();
+}
+
+/**
+ * Validate a registration number.
+ * Must be between 4 and 20 characters, alphanumeric with optional dash/underscore.
+ */
+export function validateRegNo(regNo: string): string | null {
+  if (!regNo || !regNo.trim()) {
+    return 'Registration number is required.';
+  }
+
+  const normalized = normalizeRegNo(regNo);
+  if (normalized.length < 4 || normalized.length > 20) {
+    return 'Registration number must be between 4 and 20 characters.';
+  }
+
+  if (!/^[A-Z0-9_-]+$/.test(normalized)) {
+    return 'Registration number contains invalid characters (letters, numbers, dash, underscore only).';
+  }
+
+  return null;
+}
+
+/**
  * Normalize a name (non-destructive).
  * Trim, collapse internal whitespace, Unicode NFC.
  * Does NOT change casing or spelling.

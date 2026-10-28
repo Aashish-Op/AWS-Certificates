@@ -29,7 +29,7 @@ export default async function DashboardPage() {
   // Fetch student profile
   const { data: profile } = await supabase
     .from('profiles')
-    .select('email, full_name')
+    .select('email, full_name, reg_no')
     .eq('user_id', user.id)
     .single();
 
@@ -41,6 +41,7 @@ export default async function DashboardPage() {
     .select(`
       id,
       name,
+      reg_no,
       status,
       issued_at,
       events:event_id (
@@ -55,6 +56,7 @@ export default async function DashboardPage() {
   const certificatesList = (certs || []).map((c: any) => ({
     id: c.id,
     name: c.name,
+    reg_no: c.reg_no,
     status: c.status,
     issued_at: c.issued_at,
     event: {
@@ -67,12 +69,14 @@ export default async function DashboardPage() {
 
   const userEmail = profile?.email || user.email || '';
   const fullName = profile?.full_name || user.email || 'Student';
+  const regNo = profile?.reg_no || '';
 
   return (
     <div className="min-h-[calc(100vh-140px)] bg-[#F9F9FB]">
       <DashboardHeader
         fullName={fullName}
         email={userEmail}
+        regNo={regNo}
         isAdmin={isUserAdmin}
       />
 
@@ -81,7 +85,7 @@ export default async function DashboardPage() {
           <div>
             <h2 className="text-xl font-bold text-[#0F1B2A]">My Certificates</h2>
             <p className="text-sm text-[#5F6B7A]">
-              Official certificates issued to {userEmail}
+              Official certificates issued to {regNo ? `Reg. No. ${regNo}` : userEmail}
             </p>
           </div>
           <span className="rounded bg-[#E9EBED] px-2.5 py-1 text-xs font-semibold text-[#0F1B2A]">

@@ -38,6 +38,7 @@ export function TabCertificates({ eventId, initialCertificates }: TabCertificate
 
     const matchesSearch =
       cert.name.toLowerCase().includes(query) ||
+      (cert.reg_no && cert.reg_no.toLowerCase().includes(query)) ||
       (cert.email && cert.email.toLowerCase().includes(query)) ||
       cert.id.toLowerCase().includes(query);
 
@@ -173,6 +174,7 @@ export function TabCertificates({ eventId, initialCertificates }: TabCertificate
                 <tr>
                   <th className="px-4 py-3">Certificate ID</th>
                   <th className="px-4 py-3">Recipient Name</th>
+                  <th className="px-4 py-3">Reg. No.</th>
                   <th className="px-4 py-3">Email</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Rev</th>
@@ -191,8 +193,11 @@ export function TabCertificates({ eventId, initialCertificates }: TabCertificate
                       <td className="px-4 py-3 font-semibold text-[#0F1B2A]">
                         {cert.name}
                       </td>
+                      <td className="px-4 py-3 font-mono font-bold text-xs text-[#0972D3]">
+                        {cert.reg_no || '—'}
+                      </td>
                       <td className="px-4 py-3 font-mono text-xs text-[#5F6B7A]">
-                        {cert.email}
+                        {cert.email || '—'}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         {isRevoked ? (

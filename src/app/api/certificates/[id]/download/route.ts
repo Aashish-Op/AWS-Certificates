@@ -39,6 +39,7 @@ export async function GET(
     .from('certificates')
     .select(`
       id,
+      reg_no,
       email,
       name,
       status,
@@ -67,7 +68,7 @@ export async function GET(
 
   const event: any = cert.events;
 
-  // 3. Authorize: caller is admin OR profile.email matches certificate.email
+  // 3. Authorize: caller is admin OR profile.reg_no matches certificate.reg_no
   const { data: adminRow } = await adminClient
     .from('admins')
     .select('user_id')
@@ -79,11 +80,14 @@ export async function GET(
   if (!isUserAdmin) {
     const { data: profile } = await adminClient
       .from('profiles')
-      .select('email')
+      .select('reg_no, email')
       .eq('user_id', user.id)
       .single();
 
-    if (!profile || profile.email !== cert.email) {
+    const matchesRegNo = profile?.reg_no && cert.reg_no && profile.reg_no === cert.reg_no;
+    const matchesEmail = profile?.email && cert.email && profile.email === cert.email;
+
+    if (!profile || (!matchesRegNo && !matchesEmail)) {
       return new NextResponse('Not found', { status: 404 });
     }
 

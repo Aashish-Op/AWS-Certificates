@@ -1,5 +1,25 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeEmail, validateEmail, normalizeName, validateName } from '@/lib/import/normalize';
+import { normalizeEmail, validateEmail, normalizeName, validateName, normalizeRegNo, validateRegNo } from '@/lib/import/normalize';
+
+describe('normalizeRegNo & validateRegNo', () => {
+  it('normalizes whitespace and converts to uppercase', () => {
+    expect(normalizeRegNo('  12409260  ')).toBe('12409260');
+    expect(normalizeRegNo('reg12345')).toBe('REG12345');
+  });
+
+  it('validates canonical registration numbers', () => {
+    expect(validateRegNo('12409260')).toBeNull();
+    expect(validateRegNo('12104523')).toBeNull();
+    expect(validateRegNo('REG_2026_01')).toBeNull();
+  });
+
+  it('rejects blank, too short, too long, or invalid characters', () => {
+    expect(validateRegNo('')).not.toBeNull();
+    expect(validateRegNo('123')).not.toBeNull();
+    expect(validateRegNo('A'.repeat(25))).not.toBeNull();
+    expect(validateRegNo('124@9260')).not.toBeNull();
+  });
+});
 
 describe('normalizeEmail & validateEmail', () => {
   it('normalizes whitespace and converts to lowercase', () => {

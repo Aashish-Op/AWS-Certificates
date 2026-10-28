@@ -1,16 +1,19 @@
-import { normalizeName, normalizeEmail, validateName, validateEmail } from './normalize';
+import { normalizeName, normalizeRegNo, normalizeEmail, validateName, validateRegNo, validateEmail } from './normalize';
 
 export interface ColumnMapping {
-  emailColumn: string;
   nameColumn: string;
+  regNoColumn: string;
+  emailColumn?: string;
 }
 
 export interface ValidatedRow {
   rowIndex: number;
-  rawEmail: string;
   rawName: string;
-  normalizedEmail: string;
+  rawRegNo: string;
+  rawEmail?: string;
   normalizedName: string;
+  normalizedRegNo: string;
+  normalizedEmail?: string;
   status: 'valid' | 'warning' | 'error' | 'already_issued';
   errors: string[];
   warnings: string[];
@@ -35,32 +38,34 @@ export interface ImportValidationReport {
 export function validateImportBatch(
   rawRows: Record<string, string>[],
   mapping: ColumnMapping,
-  existingEmails: Map<string, string> // Map of normalized email -> certificate_id
+  existingRegNos: Map<string, string> // Map of normalized reg_no -> certificate_id
 ): ImportValidationReport {
   const validatedRows: ValidatedRow[] = [];
-  const emailOccurrences = new Map<string, number[]>();
+  const regNoOccurrences = new Map<string, number[]>();
 
   // Pass 1: normalize and check single-row validity
   for (let i = 0; i < rawRows.length; i++) {
     const row = rawRows[i]!;
-    const rawEmail = row[mapping.emailColumn] || '';
     const rawName = row[mapping.nameColumn] || '';
+    const rawRegNo = row[mapping.regNoColumn] || '';
+    const rawEmail = mapping.emailColumn ? row[mapping.emailColumn] || '' : '';
 
-    const normalizedEmail = normalizeEmail(rawEmail);
     const normalizedName = normalizeName(rawName);
+    const normalizedRegNo = normalizeRegNo(rawRegNo);
+    const normalizedEmail = rawEmail ? normalizeEmail(rawEmail) : undefined;
 
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    // Validate email
-    const emailError = validateEmail(normalizedEmail);
-    if (emailError) {
-      errors.push(emailError);
+    // Validate registration number (required & unique per event)
+    const regNoError = validateRegNo(normalizedRegNo);
+    if (regNoError) {
+      errors.push(regNoError);
     } else {
       // Track occurrence for duplicate detection in file
-      const currentList = emailOccurrences.get(normalizedEmail) || [];
+      const currentList = regNoOccurrences.get(normalizedRegNo) || [];
       currentList.push(i);
-      emailOccurrences.set(normalizedEmail, currentList);
+      regNoOccurrences.set(normalizedRegNo, currentList);
     }
 
     // Validate name
@@ -68,12 +73,22 @@ export function validateImportBatch(
     errors.push(...nameVal.errors);
     warnings.push(...nameVal.warnings);
 
+    // Validate email if present (optional metadata)
+    if (normalizedEmail) {
+      const emailError = validateEmail(normalizedEmail);
+      if (emailError) {
+        warnings.push(`Email warning: ${emailError}`);
+      }
+    }
+
     validatedRows.push({
       rowIndex: i,
-      rawEmail,
       rawName,
-      normalizedEmail,
+      rawRegNo,
+      rawEmail: rawEmail || undefined,
       normalizedName,
+      normalizedRegNo,
+      normalizedEmail,
       status: errors.length > 0 ? 'error' : warnings.length > 0 ? 'warning' : 'valid',
       errors,
       warnings,
@@ -90,21 +105,23 @@ export function validateImportBatch(
 
   for (let i = 0; i < validatedRows.length; i++) {
     const row = validatedRows[i]!;
-    const occurrences = emailOccurrences.get(row.normalizedEmail);
 
-    if (occurrences && occurrences.length > 1) {
-      row.isDuplicateInFile = true;
-      row.duplicateRowIndexes = occurrences.filter((idx) => idx !== i);
-      row.errors.push(`Duplicate email in file (also in row ${row.duplicateRowIndexes.map(r => r + 1).join(', ')})`);
-      row.status = 'error';
-    }
+    if (row.normalizedRegNo) {
+      const occurrences = regNoOccurrences.get(row.normalizedRegNo);
+      if (occurrences && occurrences.length > 1) {
+        row.isDuplicateInFile = true;
+        row.duplicateRowIndexes = occurrences.filter((idx) => idx !== i);
+        row.errors.push(`Duplicate registration number in file (also in row ${row.duplicateRowIndexes.map(r => r + 1).join(', ')})`);
+        row.status = 'error';
+      }
 
-    // Check if already issued in DB
-    const existingCertId = existingEmails.get(row.normalizedEmail);
-    if (existingCertId) {
-      row.alreadyIssuedCertId = existingCertId;
-      if (row.status !== 'error') {
-        row.status = 'already_issued';
+      // Check if already issued in DB
+      const existingCertId = existingRegNos.get(row.normalizedRegNo);
+      if (existingCertId) {
+        row.alreadyIssuedCertId = existingCertId;
+        if (row.status !== 'error') {
+          row.status = 'already_issued';
+        }
       }
     }
 

@@ -21,8 +21,9 @@ export function TabImport({ eventId }: TabImportProps) {
   const [previewRows, setPreviewRows] = useState<Record<string, string>[]>([]);
 
   // Mapping
-  const [emailCol, setEmailCol] = useState('');
+  const [regNoCol, setRegNoCol] = useState('');
   const [nameCol, setNameCol] = useState('');
+  const [emailCol, setEmailCol] = useState('');
 
   // Validation Report
   const [report, setReport] = useState<any | null>(null);
@@ -54,19 +55,25 @@ export function TabImport({ eventId }: TabImportProps) {
         setHeaders(res.data.headers);
         setPreviewRows(res.data.previewRows);
 
-        // Pre-select heuristic mappings per spec §7.7
-        const detectedEmail = res.data.headers.find((h) => {
+        // Pre-select heuristic mappings
+        const detectedReg = res.data.headers.find((h) => {
           const l = h.toLowerCase();
-          return l.includes('email') || l.includes('mail');
+          return l.includes('reg') || l.includes('roll') || l.includes('id') || l.includes('number');
         }) || res.data.headers[0] || '';
 
         const detectedName = res.data.headers.find((h) => {
           const l = h.toLowerCase();
-          return l.includes('name') || l.includes('student') || l.includes('participant');
+          return l.includes('name') || l.includes('student') || l.includes('participant') || l.includes('recipient');
         }) || res.data.headers[1] || '';
 
-        setEmailCol(detectedEmail);
+        const detectedEmail = res.data.headers.find((h) => {
+          const l = h.toLowerCase();
+          return l.includes('email') || l.includes('mail');
+        }) || '';
+
+        setRegNoCol(detectedReg);
         setNameCol(detectedName);
+        setEmailCol(detectedEmail);
 
         setStep('mapping');
       } else {
@@ -77,13 +84,14 @@ export function TabImport({ eventId }: TabImportProps) {
 
   // Step 2: Validate column mapping
   const handleValidateMapping = () => {
-    if (!batchId || !emailCol || !nameCol) return;
+    if (!batchId || !regNoCol || !nameCol) return;
     setErrorMessage(null);
 
     startTransition(async () => {
       const res = await validateBatchAction(batchId, {
-        emailColumn: emailCol,
+        regNoColumn: regNoCol,
         nameColumn: nameCol,
+        emailColumn: emailCol || undefined,
       });
 
       if (res.ok) {
@@ -122,9 +130,9 @@ export function TabImport({ eventId }: TabImportProps) {
   const handleDownloadExportCsv = () => {
     if (!commitResult?.records) return;
 
-    const header = 'Email Address,Recipient Name,Certificate ID,Verification URL\n';
+    const header = 'Registration Number,Recipient Name,Email,Certificate ID,Verification URL\n';
     const lines = commitResult.records.map((r: any) =>
-      `"${r.email}","${r.name}","${r.certificateId}","${r.verifyUrl}"`
+      `"${r.regNo || ''}","${r.name}","${r.email || ''}","${r.certificateId}","${r.verifyUrl}"`
     );
     const blob = new Blob([header + lines.join('\n')], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -180,18 +188,18 @@ export function TabImport({ eventId }: TabImportProps) {
           <div className="border-b border-[#E9EBED] pb-3">
             <h2 className="text-base font-bold text-[#0F1B2A]">Confirm Column Mapping</h2>
             <p className="text-xs text-[#5F6B7A]">
-              Verify which columns correspond to the Email Address and Recipient Name.
+              Match spreadsheet columns to Registration Number (unique student ID), Recipient Name, and optional Email.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
-              <label className="block text-xs font-medium text-[#5F6B7A]">
-                Email Address Column
+              <label className="block text-xs font-semibold text-[#0F1B2A]">
+                Registration Number Column <span className="text-[#D91515]">*</span>
               </label>
               <select
-                value={emailCol}
-                onChange={(e) => setEmailCol(e.target.value)}
+                value={regNoCol}
+                onChange={(e) => setRegNoCol(e.target.value)}
                 className="mt-1 block w-full rounded border border-[#E9EBED] bg-[#F9F9FB] px-3 py-2 text-sm text-[#0F1B2A] focus:border-[#0972D3] focus:bg-white focus:outline-none"
               >
                 {headers.map((h) => (
@@ -200,11 +208,12 @@ export function TabImport({ eventId }: TabImportProps) {
                   </option>
                 ))}
               </select>
+              <p className="mt-1 text-xs text-[#5F6B7A]">Primary unique identifier</p>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[#5F6B7A]">
-                Full Name Column
+              <label className="block text-xs font-semibold text-[#0F1B2A]">
+                Full Name Column <span className="text-[#D91515]">*</span>
               </label>
               <select
                 value={nameCol}
@@ -217,6 +226,26 @@ export function TabImport({ eventId }: TabImportProps) {
                   </option>
                 ))}
               </select>
+              <p className="mt-1 text-xs text-[#5F6B7A]">Name printed on certificate</p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-[#0F1B2A]">
+                Email Column <span className="text-[#5F6B7A] font-normal">(Optional)</span>
+              </label>
+              <select
+                value={emailCol}
+                onChange={(e) => setEmailCol(e.target.value)}
+                className="mt-1 block w-full rounded border border-[#E9EBED] bg-[#F9F9FB] px-3 py-2 text-sm text-[#0F1B2A] focus:border-[#0972D3] focus:bg-white focus:outline-none"
+              >
+                <option value="">-- None / Skip --</option>
+                {headers.map((h) => (
+                  <option key={h} value={h}>
+                    {h}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-[#5F6B7A]">Optional attendee email</p>
             </div>
           </div>
 
@@ -229,7 +258,7 @@ export function TabImport({ eventId }: TabImportProps) {
               <table className="w-full text-left text-xs">
                 <thead className="bg-[#F9F9FB] text-[#5F6B7A]">
                   <tr>
-                    {headers.slice(0, 5).map((h) => (
+                    {headers.slice(0, 6).map((h) => (
                       <th key={h} className="px-3 py-2 font-semibold">
                         {h}
                       </th>
@@ -239,7 +268,7 @@ export function TabImport({ eventId }: TabImportProps) {
                 <tbody className="divide-y divide-[#E9EBED]">
                   {previewRows.slice(0, 5).map((row, idx) => (
                     <tr key={idx}>
-                      {headers.slice(0, 5).map((h) => (
+                      {headers.slice(0, 6).map((h) => (
                         <td key={h} className="px-3 py-1.5 text-[#0F1B2A]">
                           {row[h] || ''}
                         </td>
@@ -262,8 +291,8 @@ export function TabImport({ eventId }: TabImportProps) {
             <button
               type="button"
               onClick={handleValidateMapping}
-              disabled={isPending}
-              className="inline-flex items-center gap-1.5 rounded bg-[#FF9900] px-4 py-2 text-xs font-semibold text-[#0F1B2A] hover:bg-[#EC7211]"
+              disabled={isPending || !regNoCol || !nameCol}
+              className="inline-flex items-center gap-1.5 rounded bg-[#FF9900] px-4 py-2 text-xs font-semibold text-[#0F1B2A] hover:bg-[#EC7211] disabled:opacity-60"
             >
               <span>{isPending ? 'Validating...' : 'Validate and Review'}</span>
               <ArrowRight className="h-3.5 w-3.5" />
@@ -341,8 +370,9 @@ export function TabImport({ eventId }: TabImportProps) {
                 <thead className="sticky top-0 border-b border-[#E9EBED] bg-[#F9F9FB] font-semibold text-[#5F6B7A]">
                   <tr>
                     <th className="px-3 py-2">Row</th>
-                    <th className="px-3 py-2">Email</th>
+                    <th className="px-3 py-2">Reg. Number</th>
                     <th className="px-3 py-2">Name (Editable)</th>
+                    <th className="px-3 py-2">Email</th>
                     <th className="px-3 py-2">Status</th>
                     <th className="px-3 py-2">Validation Notes</th>
                     <th className="px-3 py-2 text-right">Exclude</th>
@@ -363,7 +393,7 @@ export function TabImport({ eventId }: TabImportProps) {
                         >
                           <td className="px-3 py-2 text-[#5F6B7A]">{row.rowIndex + 1}</td>
                           <td className="px-3 py-2 font-mono font-semibold text-[#0F1B2A]">
-                            {row.normalizedEmail}
+                            {row.normalizedRegNo}
                           </td>
                           <td className="px-3 py-2">
                             <input
@@ -381,6 +411,9 @@ export function TabImport({ eventId }: TabImportProps) {
                               }
                               className="rounded border border-[#E9EBED] bg-white px-2 py-1 text-xs text-[#0F1B2A] focus:border-[#0972D3]"
                             />
+                          </td>
+                          <td className="px-3 py-2 text-[#5F6B7A]">
+                            {row.normalizedEmail || '—'}
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap">
                             {row.status === 'valid' && (
@@ -455,11 +488,12 @@ export function TabImport({ eventId }: TabImportProps) {
           <div className="w-full max-w-md rounded-lg border border-[#E9EBED] bg-white p-6 shadow-xl space-y-4">
             <h3 className="text-lg font-bold text-[#0F1B2A]">Confirm Issuance</h3>
             <p className="text-sm text-[#5F6B7A]">
-              You are about to issue <strong>{report?.summary?.newToIssue}</strong> new certificates for this event.
+              You are about to issue <strong>{report?.summary?.newToIssue}</strong> new certificates for this event keyed by attendee registration number.
             </p>
             <ul className="text-xs text-[#5F6B7A] space-y-1 list-disc pl-5">
-              <li>Each attendee will receive a unique, collision-resistant Certificate ID.</li>
-              <li>Commit operation is idempotent and runs safely in a single batch.</li>
+              <li>Each student will access their certificate via their Registration Number.</li>
+              <li>Each attendee receives a unique, collision-resistant Certificate ID.</li>
+              <li>Duplicate email addresses in the file are safely permitted.</li>
               <li>Issued certificates will become visible to students when the event status is Published.</li>
             </ul>
 

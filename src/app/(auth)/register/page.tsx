@@ -10,6 +10,7 @@ export default function RegisterPage() {
   const router = useRouter();
 
   const [fullName, setFullName] = useState('');
+  const [regNo, setRegNo] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -23,6 +24,7 @@ export default function RegisterPage() {
     startTransition(async () => {
       const res = await registerAction({
         fullName,
+        regNo,
         email,
         password,
       });
@@ -41,7 +43,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-md border border-[#E9EBED] bg-white p-6 sm:p-8 rounded-lg shadow-none">
         <h1 className="text-2xl font-bold text-[#0F1B2A]">Create an account</h1>
         <p className="mt-1 text-sm text-[#5F6B7A]">
-          Register with your email to access and download your event certificates.
+          Register with your registration number and email to access and download your certificates.
         </p>
 
         {errorMessage && (
@@ -71,8 +73,30 @@ export default function RegisterPage() {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               className="mt-1 block w-full rounded border border-[#E9EBED] bg-[#F9F9FB] px-3 py-2 text-sm text-[#0F1B2A] placeholder-[#5F6B7A] focus:border-[#0972D3] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0972D3]"
-              placeholder="e.g. Name SurName"
+              placeholder="e.g. Ashish Gupta"
             />
+          </div>
+
+          <div>
+            <label
+              htmlFor="regNo"
+              className="block text-sm font-medium text-[#0F1B2A]"
+            >
+              Registration number
+            </label>
+            <input
+              id="regNo"
+              name="regNo"
+              type="text"
+              required
+              value={regNo}
+              onChange={(e) => setRegNo(e.target.value)}
+              className="mt-1 block w-full rounded border border-[#E9EBED] bg-[#F9F9FB] px-3 py-2 text-sm text-[#0F1B2A] placeholder-[#5F6B7A] focus:border-[#0972D3] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0972D3]"
+              placeholder="e.g. 12409260"
+            />
+            <p className="mt-1 text-xs text-[#5F6B7A]">
+              Your university registration number used at event sign-in.
+            </p>
           </div>
 
           <div>

@@ -4,13 +4,14 @@ import { z } from 'zod';
 import { headers } from 'next/headers';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
-import { normalizeEmail, validateEmail } from '@/lib/import/normalize';
+import { normalizeEmail, validateEmail, normalizeRegNo, validateRegNo } from '@/lib/import/normalize';
 import { siteConfig } from '@/config/site';
 import { RateLimits } from '@/lib/rate-limit';
 import { ActionResult, success, failure } from '@/lib/errors';
 
 const registerSchema = z.object({
   fullName: z.string().trim().min(2, 'Full name must be at least 2 characters').max(100),
+  regNo: z.string().trim().min(4, 'Registration number must be at least 4 characters').max(20, 'Registration number too long'),
   email: z.string().trim().email('Invalid email address').toLowerCase(),
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
@@ -61,8 +62,14 @@ export async function registerAction(formData: unknown): Promise<ActionResult<{ 
     return failure('VALIDATION_ERROR', parsed.error.issues[0]?.message || 'Invalid form input');
   }
 
-  const { fullName, email, password } = parsed.data;
+  const { fullName, regNo, email, password } = parsed.data;
   const normalizedEmail = normalizeEmail(email);
+  const normalizedRegNo = normalizeRegNo(regNo);
+
+  const regNoError = validateRegNo(normalizedRegNo);
+  if (regNoError) {
+    return failure('VALIDATION_ERROR', regNoError);
+  }
 
   const emailError = validateEmail(normalizedEmail);
   if (emailError) {
@@ -71,12 +78,23 @@ export async function registerAction(formData: unknown): Promise<ActionResult<{ 
 
   const adminClient = createAdminClient();
 
+  // Check if registration number already registered in profiles
+  const { data: existingReg } = await adminClient
+    .from('profiles')
+    .select('user_id')
+    .eq('reg_no', normalizedRegNo)
+    .maybeSingle();
+
+  if (existingReg) {
+    return failure('CONFLICT', 'An account with this Registration Number already exists. Sign in instead.');
+  }
+
   // 1. Create auth user with admin API (bypasses email confirmation)
   const { data: userData, error: createError } = await adminClient.auth.admin.createUser({
     email: normalizedEmail,
     password,
     email_confirm: true,
-    user_metadata: { full_name: fullName.trim() },
+    user_metadata: { full_name: fullName.trim(), reg_no: normalizedRegNo },
   });
 
   if (createError) {
@@ -92,6 +110,7 @@ export async function registerAction(formData: unknown): Promise<ActionResult<{ 
   const { error: profileError } = await adminClient.from('profiles').insert({
     user_id: newUserId,
     full_name: fullName.trim(),
+    reg_no: normalizedRegNo,
     email: normalizedEmail,
   });
 
@@ -101,9 +120,11 @@ export async function registerAction(formData: unknown): Promise<ActionResult<{ 
 
     if (
       profileError.code === '23505' ||
-      profileError.message.includes('unique') ||
-      profileError.message.includes('profiles_email_unique')
+      profileError.message.includes('unique')
     ) {
+      if (profileError.message.includes('reg_no')) {
+        return failure('CONFLICT', 'An account with this Registration Number already exists. Sign in instead.');
+      }
       return failure(
         'CONFLICT',
         `An account with this email address already exists. If it is yours, please sign in instead.`

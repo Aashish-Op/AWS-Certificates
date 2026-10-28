@@ -29,7 +29,7 @@ export default async function AdminEventDetailPage({ params }: EventPageProps) {
 
   const { data: certs } = await supabase
     .from('certificates')
-    .select('id, name, email, status, render_version, issued_at')
+    .select('id, name, reg_no, email, status, render_version, issued_at')
     .eq('event_id', id)
     .order('issued_at', { ascending: false });
 
