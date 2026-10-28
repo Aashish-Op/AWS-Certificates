@@ -1,0 +1,17 @@
+# Robots.txt
+# Only / and /privacy are indexable.
+# Everything else is blocked.
+
+User-agent: *
+Allow: /$
+Allow: /privacy$
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /api
+Disallow: /verify/
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+
+Sitemap: https://certificate.awslpu.in/sitemap.xml
