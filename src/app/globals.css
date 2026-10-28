@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+/*
+ * AWS SBG LPU Certificate Platform — Design Tokens
+ * Inspired by AWS Cloudscape Design System (cloudscape.design).
+ * Reference: Prompt.md §9.
+ *
+ * Anti-slop rules enforced:
+ * - No gradients, glassmorphism, blobs, glow, or animated backgrounds.
+ * - Flat design: 1px borders, almost no shadow.
+ * - 8px spacing grid, 4px/8px radii.
+ */
+
+@theme {
+  /* Navy / Dark surfaces */
+  --color-squid-ink: #232F3E;
+  --color-deep-ink: #0F1B2A;
+
+  /* Primary action: AWS Orange */
+  --color-primary: #FF9900;
+  --color-primary-hover: #EC7211;
+
+  /* Links and focus */
+  --color-link: #0972D3;
+
+  /* Surfaces */
+  --color-page-bg: #F9F9FB;
+  --color-surface: #FFFFFF;
+  --color-border: #E9EBED;
+  --color-text-secondary: #5F6B7A;
+
+  /* Status */
+  --color-success: #037F0C;
+  --color-error: #D91515;
+  --color-warning: #8D6605;
+
+  /* Spacing (8px grid) */
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-5: 1.25rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --spacing-10: 2.5rem;
+  --spacing-12: 3rem;
+  --spacing-16: 4rem;
+
+  /* Border radii */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+
+  /* Typography scale */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 1.5rem;
+  --font-size-2xl: 2rem;
+}
+
+/* Base reset and defaults */
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--color-page-bg);
+  color: var(--color-deep-ink);
+  line-height: 1.5;
+}
+
+/* Focus ring — visible and accessible */
+:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 2px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Selection */
+::selection {
+  background-color: color-mix(in srgb, var(--color-link) 20%, transparent);
+}
