@@ -13,7 +13,7 @@ const serverSchema = z.object({
 
 
   // Site
-  NEXT_PUBLIC_SITE_URL: z.string().url().default('http://localhost:3000'),
+  NEXT_PUBLIC_SITE_URL: z.string().url().default('https://certificates.awslpu.in'),
 
   // LinkedIn (optional)
   LINKEDIN_ORG_ID: z.string().optional(),
@@ -29,7 +29,7 @@ const serverSchema = z.object({
 const clientSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
-  NEXT_PUBLIC_SITE_URL: z.string().url().default('http://localhost:3000'),
+  NEXT_PUBLIC_SITE_URL: z.string().url().default('https://certificates.awslpu.in'),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;

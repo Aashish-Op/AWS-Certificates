@@ -3,7 +3,7 @@ import { PDFDocument, rgb } from 'pdf-lib';
 import QRCode from 'qrcode';
 import { CertificateLayout, DEFAULT_CERTIFICATE_LAYOUT, computeNameLayout } from './layout';
 import { loadFontForPdf } from './fonts';
-import { formatCertificateId } from '@/config/site';
+import { formatCertificateId, siteConfig, LIVE_PROD_URL } from '@/config/site';
 
 export interface RenderPdfOptions {
   certificateId: string;
@@ -35,8 +35,14 @@ export async function renderCertificatePdf(options: RenderPdfOptions): Promise<U
     templateWidth,
     templateHeight,
     layout: inputLayout,
-    verifyOrigin = process.env.NEXT_PUBLIC_SITE_URL || 'https://certificate.awslpu.in',
+    verifyOrigin = siteConfig.url,
   } = options;
+
+  const formattedId = formatCertificateId(certificateId);
+  const cleanOrigin =
+    verifyOrigin && !verifyOrigin.includes('localhost') && !verifyOrigin.includes('127.0.0.1')
+      ? verifyOrigin.replace(/\/+$/, '')
+      : (siteConfig.url || LIVE_PROD_URL);
 
   const layout = inputLayout || DEFAULT_CERTIFICATE_LAYOUT;
   const aspectRatio = templateWidth / templateHeight;
@@ -48,7 +54,7 @@ export async function renderCertificatePdf(options: RenderPdfOptions): Promise<U
   const pdfDoc = await PDFDocument.create();
   pdfDoc.setTitle(`${eventTitle} - ${recipientName}`);
   pdfDoc.setAuthor(issuerName);
-  pdfDoc.setSubject(`${verifyOrigin}/verify/${certificateId}`);
+  pdfDoc.setSubject(`${cleanOrigin}/verify/${formattedId}`);
   pdfDoc.setProducer('AWS Student Builder Group, LPU');
 
   const page = pdfDoc.addPage([pageWidth, pageHeight]);
@@ -96,8 +102,7 @@ export async function renderCertificatePdf(options: RenderPdfOptions): Promise<U
   });
 
   // Generate QR Code with formatted verifiable ID (e.g. SAMP-LE12-3456 or XXXX-XXXX-XXXX)
-  const formattedId = formatCertificateId(certificateId);
-  const verifyUrl = `${verifyOrigin}/verify/${formattedId}`;
+  const verifyUrl = `${cleanOrigin}/verify/${formattedId}`;
   const qrBuffer = await QRCode.toBuffer(verifyUrl, {
     margin: 1,
     width: 256,

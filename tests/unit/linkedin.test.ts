@@ -18,16 +18,19 @@ describe('LinkedIn URL builder', () => {
     expect(url).toContain('issueYear=2026');
     expect(url).toContain('issueMonth=10');
     expect(url).toContain('certId=2345-6789-ABCD');
-    expect(url).toContain(encodeURIComponent(`${siteConfig.url}/verify/2345-6789-ABCD`));
+    expect(url).toContain(encodeURIComponent('https://certificates.awslpu.in/verify/2345-6789-ABCD'));
+    expect(url).not.toContain('localhost');
   });
 
   it('builds Share Post URL with verify URL', () => {
     const url = buildLinkedInShareUrl('23456789ABCD');
     expect(url).toContain('https://www.linkedin.com/sharing/share-offsite/?');
-    expect(url).toContain(encodeURIComponent(`${siteConfig.url}/verify/2345-6789-ABCD`));
+    expect(url).toContain(encodeURIComponent('https://certificates.awslpu.in/verify/2345-6789-ABCD'));
+    expect(url).not.toContain('localhost');
   });
 
   it('builds verification URL with formatted hyphenated ID', () => {
-    expect(buildVerifyUrl('23456789ABCD')).toBe(`${siteConfig.url}/verify/2345-6789-ABCD`);
+    expect(buildVerifyUrl('23456789ABCD')).toBe('https://certificates.awslpu.in/verify/2345-6789-ABCD');
+    expect(buildVerifyUrl('23456789ABCD')).not.toContain('localhost');
   });
 });

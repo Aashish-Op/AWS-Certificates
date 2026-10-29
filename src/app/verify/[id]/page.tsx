@@ -200,7 +200,7 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
     }
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const siteUrl = siteConfig.url;
   const formattedCertId = formatCertificateId(cert.id);
   const verifyPageUrl = `${siteUrl}/verify/${formattedCertId}`;
   let qrDataUrl = '';

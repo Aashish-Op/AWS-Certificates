@@ -115,7 +115,7 @@ Fill in your Supabase credentials in `.env.local`:
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_SITE_URL=https://certificates.awslpu.in
 LINKEDIN_ORG_ID=69826209
 NEXT_PUBLIC_LINKEDIN_ORG_ID=69826209
 ```

@@ -38,7 +38,7 @@ The app will be available at `http://localhost:3000`.
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anonymous key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role key |
-| `NEXT_PUBLIC_SITE_URL` | No | Site URL (default: http://localhost:3000) |
+| `NEXT_PUBLIC_SITE_URL` | No | Site URL (default: https://certificates.awslpu.in) |
 | `LINKEDIN_ORG_ID` | No | LinkedIn organization page numeric ID |
 | `SENTRY_DSN` | No | Sentry DSN for error tracking |
 

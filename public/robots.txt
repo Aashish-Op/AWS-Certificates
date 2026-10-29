@@ -14,4 +14,4 @@ Disallow: /register
 Disallow: /forgot-password
 Disallow: /reset-password
 
-Sitemap: https://certificate.awslpu.in/sitemap.xml
+Sitemap: https://certificates.awslpu.in/sitemap.xml

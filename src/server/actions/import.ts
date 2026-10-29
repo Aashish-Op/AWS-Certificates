@@ -9,6 +9,7 @@ import { validateImportBatch, ColumnMapping } from '@/lib/import/validate';
 import { createCertificateId } from '@/lib/certificate/ids';
 import { RateLimits } from '@/lib/rate-limit';
 import { revalidatePath } from 'next/cache';
+import { siteConfig } from '@/config/site';
 
 export async function stageImportAction(
   eventId: string,
@@ -185,7 +186,7 @@ export async function commitImportBatchAction(
   }> = [];
 
   const exportRecords: Array<{ regNo: string; email: string; name: string; certificateId: string; verifyUrl: string }> = [];
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://certificate.awslpu.in';
+  const siteUrl = siteConfig.url;
 
   let issuedCount = 0;
   let updatedCount = 0;
