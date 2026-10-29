@@ -73,7 +73,7 @@ export default function RegisterPage() {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               className="mt-1 block w-full rounded border border-[#E9EBED] bg-[#F9F9FB] px-3 py-2 text-sm text-[#0F1B2A] placeholder-[#5F6B7A] focus:border-[#0972D3] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0972D3]"
-              placeholder="e.g. Ashish Gupta"
+              placeholder="e.g. Name Surname"
             />
           </div>
 
@@ -92,7 +92,7 @@ export default function RegisterPage() {
               value={regNo}
               onChange={(e) => setRegNo(e.target.value)}
               className="mt-1 block w-full rounded border border-[#E9EBED] bg-[#F9F9FB] px-3 py-2 text-sm text-[#0F1B2A] placeholder-[#5F6B7A] focus:border-[#0972D3] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0972D3]"
-              placeholder="e.g. 12409260"
+              placeholder="e.g. 12501000"
             />
             <p className="mt-1 text-xs text-[#5F6B7A]">
               Your university registration number used at event sign-in.
